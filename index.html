@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ürün Takip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF0EA; --surface:#FFFFFF; --text:#1B2321; --muted:#5B6B66;
+    --accent:#35576F; --spark:#D65A1F; --line:#C7CDBF; --ok:#2E7D4F;
+    --warn:#C89A1E; --shadow: 0 1px 3px rgba(20,30,28,0.08), 0 1px 2px rgba(20,30,28,0.06);
+  }
+  [data-theme="dark"]{
+    --bg:#14181B; --surface:#1D2226; --text:#EDEFEA; --muted:#92A29B;
+    --accent:#6FA8C7; --spark:#FF7A3D; --line:#2C3236; --ok:#4CAF77; --warn:#E0B23D;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  [data-theme="sanayi"]{
+    --bg:#2B2E31; --surface:#35393C; --text:#F2EFE9; --muted:#B8BCB6;
+    --accent:#FFC93C; --spark:#E4572E; --line:#46494C; --ok:#8FD19E; --warn:#FFC93C;
+    --shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh; padding-bottom:40px;
+    transition:background .25s ease, color .25s ease;
+  }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+  main#app{ animation:fadeUp .28s ease; }
+  @keyframes shimmer{ 0%{ background-position:-200px 0; } 100%{ background-position:200px 0; } }
+  .skel{ border-radius:10px; background:linear-gradient(90deg, var(--surface) 25%, var(--line) 37%, var(--surface) 63%); background-size:400px 100%; animation:shimmer 1.4s infinite linear; }
+  .tap{ transition:transform .12s ease; }
+  .tap:active{ transform:scale(.96); }
+  ::-webkit-scrollbar{ display:none; }
+  h1,h2,h3,.disp{ font-family:'Oswald', sans-serif; letter-spacing:.02em; text-transform:uppercase; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  header.top{
+    position:sticky; top:0; z-index:20;
+    background:var(--bg); border-bottom:1px dashed var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px;
+  }
+  header.top .title{ display:flex; align-items:center; gap:10px; }
+  header.top .title .back{ cursor:pointer; font-size:22px; color:var(--accent); display:none; transition:transform .15s ease; }
+  header.top .title .back:active{ transform:translateX(-3px); }
+  header.top .title .back.show{ display:inline; }
+  header.top .logo{ width:22px; height:22px; border:2px solid var(--spark); border-radius:5px; position:relative; flex-shrink:0; }
+  header.top .logo::before{ content:''; position:absolute; inset:4px; border:1px dashed var(--spark); border-radius:2px; }
+  header.top h1{ font-size:19px; }
+  header.top .actions{ display:flex; gap:10px; }
+  .iconbtn{
+    width:46px; height:46px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:22px; color:var(--text); position:relative;
+    transition:transform .12s ease, border-color .15s ease;
+  }
+  .iconbtn:active{ transform:scale(.92); }
+  .iconbtn .dot{
+    position:absolute; top:-4px; right:-4px; width:11px; height:11px; border-radius:50%;
+    background:var(--spark); display:none;
+    box-shadow:0 0 0 2px var(--bg);
+  }
+  main{ padding:18px; max-width:520px; margin:0 auto; }
+
+  /* Cut-line signature divider */
+  .cutline{
+    position:relative; height:1px; background:repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
+    margin:22px 0;
+  }
+  .cutline::before, .cutline::after{
+    content:''; position:absolute; top:-4px; width:1px; height:9px; background:var(--muted);
+  }
+  .cutline::before{ left:0; } .cutline::after{ right:0; }
+
+  .eyebrow{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+
+  /* Home grid */
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .atolye-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:16px 14px; cursor:pointer; position:relative; overflow:hidden;
+    box-shadow:var(--shadow); transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .atolye-card:active{ transform:scale(.97) translateY(1px); }
+  .atolye-card::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent);
+  }
+  .atolye-card .no{ font-family:'Oswald'; font-size:32px; font-weight:600; line-height:1; }
+  .atolye-card .lbl{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px;}
+  .atolye-card .counts{ display:flex; gap:8px; margin-top:10px; font-family:'IBM Plex Mono'; font-size:11px; }
+  .chip{ padding:2px 7px; border-radius:20px; border:1px solid var(--line); color:var(--muted); }
+  .chip.ok{ color:var(--ok); border-color:var(--ok); }
+  .chip.warn{ color:var(--warn); border-color:var(--warn); }
+  .segbar{ display:flex; height:5px; border-radius:3px; overflow:hidden; margin-top:10px; background:var(--line); }
+  .segbar span{ height:100%; }
+
+  .wide-btn{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:18px 16px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; margin-top:12px; box-shadow:var(--shadow); transition:transform .15s ease;
+  }
+  .wide-btn:active{ transform:scale(.98); }
+  .wide-btn .t{ font-family:'Oswald'; font-size:15px; text-transform:uppercase; letter-spacing:.03em;}
+  .wide-btn .arrow{ color:var(--spark); font-size:18px; transition:transform .15s ease; }
+  .wide-btn:active .arrow{ transform:translateX(3px); }
+
+  /* Status groups */
+  .group-title{ display:flex; align-items:center; gap:8px; margin:22px 0 10px; }
+  .group-title .bar{ width:10px; height:10px; border-radius:2px; }
+  .group-title h2{ font-size:14px; letter-spacing:.06em; }
+  .group-title .cnt{ margin-left:auto; font-family:'IBM Plex Mono'; font-size:12px; color:var(--muted); }
+
+  .job-card{
+    display:flex; gap:12px; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:10px; margin-bottom:10px; cursor:pointer; box-shadow:var(--shadow);
+    position:relative; overflow:hidden; transition:transform .15s ease;
+  }
+  .job-card:active{ transform:scale(.98); }
+  .job-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--card-status, var(--line)); }
+  .job-card img{ width:64px; height:64px; border-radius:8px; object-fit:cover; background:var(--bg); flex-shrink:0; }
+  .job-card .ph{ width:64px; height:64px; border-radius:8px; background:var(--bg); flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:22px; border:1px dashed var(--line); }
+  .job-card .info{ display:flex; flex-direction:column; justify-content:center; gap:3px; min-width:0; }
+  .job-card .name{ font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .job-card .meta{ font-size:12px; color:var(--muted); }
+  .job-card .atolye-tag{ font-family:'IBM Plex Mono'; font-size:10px; color:var(--accent); }
+
+  .empty{ color:var(--muted); font-size:13px; padding:26px 0; text-align:center; }
+  .empty::before{ content:'✂'; display:block; font-size:20px; margin-bottom:8px; opacity:.5; }
+
+  /* Detail page */
+  .photo-scroll{ display:flex; gap:8px; overflow-x:auto; margin-bottom:16px; scroll-snap-type:x mandatory; }
+  .photo-scroll img{ height:220px; border-radius:12px; flex-shrink:0; scroll-snap-align:start; box-shadow:var(--shadow); }
+  .photo-empty{ height:160px; border-radius:12px; border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; color:var(--muted); margin-bottom:16px; flex-direction:column; gap:6px; }
+  .photo-empty::before{ content:'✂'; font-size:22px; opacity:.4; }
+  .status-pill{ display:inline-block; padding:5px 14px; border-radius:20px; font-size:12px; font-family:'IBM Plex Mono'; margin-bottom:18px; letter-spacing:.03em; }
+  .spec-row{ display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px dashed var(--line); }
+  .spec-row .k{ font-size:13px; color:var(--muted); }
+  .spec-row .v{ font-family:'IBM Plex Mono'; font-size:13px; font-weight:500; text-align:right; }
+  .drive-btn{
+    display:block; text-align:center; margin-top:18px; padding:14px; border-radius:10px;
+    background:var(--accent); color:var(--surface); text-decoration:none; font-weight:600; font-size:14px;
+    transition:transform .15s ease; box-shadow:var(--shadow);
+  }
+  .drive-btn:active{ transform:scale(.97); }
+  .profit{ color:var(--ok); font-weight:600; } .loss{ color:var(--spark); font-weight:600; }
+
+  /* Rapor */
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow); transition:transform .15s ease; }
+  .stat-card:active{ transform:scale(.97); }
+  .stat-card .n{ font-family:'Oswald'; font-size:24px; }
+  .stat-card .l{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
+  .bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .bar-row .lbl{ width:64px; font-family:'IBM Plex Mono'; font-size:12px; color:var(--muted); }
+  .bar-row .track{ flex:1; height:14px; background:var(--surface); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+  .bar-row .fill{ height:100%; background:var(--accent); transition:width .5s ease; }
+  .bar-row .val{ width:60px; text-align:right; font-family:'IBM Plex Mono'; font-size:11px; color:var(--muted); }
+
+  /* Filter sheet */
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:30; display:none; }
+  .overlay.show{ display:block; }
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:31; background:var(--surface);
+    border-radius:16px 16px 0 0; padding:20px 18px 24px; transform:translateY(100%);
+    transition:transform .25s ease; max-height:80vh; overflow-y:auto;
+  }
+  .sheet.show{ transform:translateY(0); }
+  .sheet h3{ font-size:16px; margin-bottom:14px; }
+  .filter-group{ margin-bottom:16px; }
+  .filter-group .fl{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+  .pill-opt{ display:inline-block; padding:7px 13px; border-radius:20px; border:1px solid var(--line); font-size:13px; margin:0 6px 6px 0; cursor:pointer; }
+  .pill-opt.active{ background:var(--accent); color:var(--surface); border-color:var(--accent); }
+  .search-input{
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+    background:var(--bg); color:var(--text); font-family:'IBM Plex Sans'; font-size:14px;
+  }
+  .sheet-actions{ display:flex; gap:10px; margin-top:6px; }
+  .btn{ flex:1; padding:12px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--text); font-weight:600; text-align:center; cursor:pointer; font-size:14px; }
+  .btn.primary{ background:var(--accent); color:var(--surface); border-color:var(--accent); }
+
+  .theme-menu{
+    position:absolute; top:64px; right:18px; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; box-shadow:var(--shadow); overflow:hidden; z-index:25; display:none;
+  }
+  .theme-menu.show{ display:block; }
+  .theme-opt{ padding:12px 18px; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .theme-opt:hover{ background:var(--bg); }
+
+  .loading, .errbox{ text-align:center; padding:60px 20px; color:var(--muted); font-size:14px; }
+  .errbox{ color:var(--spark); }
+</style>
+</head>
+<body data-theme="light">
+
+<header class="top">
+  <div class="title">
+    <span class="back" id="backBtn">←</span>
+    <div class="logo"></div>
+    <h1 id="pageTitle">Ürün Takip</h1>
+  </div>
+  <div class="actions">
+    <div class="iconbtn" id="filterBtn">⚙<span class="dot" id="filterDot"></span></div>
+    <div class="iconbtn" id="themeBtn">◐</div>
+  </div>
+</header>
+
+<div class="theme-menu" id="themeMenu">
+  <div class="theme-opt" data-theme="light">☀ Açık</div>
+  <div class="theme-opt" data-theme="dark">☾ Koyu</div>
+  <div class="theme-opt" data-theme="sanayi">⚠ Sanayi</div>
+</div>
+
+<main id="app">
+  <div class="eyebrow">Atölyeler</div>
+  <div class="grid2">
+    <div class="skel" style="height:110px"></div>
+    <div class="skel" style="height:110px"></div>
+    <div class="skel" style="height:110px"></div>
+    <div class="skel" style="height:110px"></div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="filterSheet">
+  <h3>Filtrele</h3>
+  <div class="filter-group">
+    <div class="fl">Ara</div>
+    <input class="search-input" id="fSearch" placeholder="Proje, müşteri veya mimar adı ara...">
+  </div>
+  <div class="filter-group">
+    <div class="fl">Atölye</div>
+    <div id="fAtolye"></div>
+  </div>
+  <div class="filter-group">
+    <div class="fl">Durum</div>
+    <div id="fDurum"></div>
+  </div>
+  <div class="sheet-actions">
+    <div class="btn" id="clearFilters">Temizle</div>
+    <div class="btn primary" id="applyFilters">Uygula</div>
+  </div>
+</div>
+
+<script>
+/* ====== AYARLAR ====== */
+// Token artık burada değil — Cloudflare Worker (proxy) tarafında gizli tutuluyor.
+const PROXY_URL = "https://atolye-proxy.atolyetakip100.workers.dev";
+
+const STATUS_ORDER = ["Sıra İçin Beklemede", "Sıraya Alındı", "Üretimde", "Ürün Tamamlandı", "Teslim Edildi"];
+const STATUS_COLOR = { "Sıra İçin Beklemede":"var(--muted)", "Sıraya Alındı":"#C0553B", "Üretimde":"var(--warn)", "Ürün Tamamlandı":"var(--accent)", "Teslim Edildi":"var(--ok)" };
+const STATUS_LABEL = { "Sıra İçin Beklemede":"Sıra İçin Beklemede", "Sıraya Alındı":"Sıraya Alındı", "Üretimde":"Üretimde", "Ürün Tamamlandı":"Ürün Tamamlandı", "Teslim Edildi":"Teslim Edildi" };
+
+let records = [];
+let route = { page:"home" };
+let filters = { atolye:new Set(), durum:new Set(), search:"" };
+
+const app = document.getElementById("app");
+const pageTitle = document.getElementById("pageTitle");
+const backBtn = document.getElementById("backBtn");
+
+function fmtTL(n){ if(n==null) return "—"; return "₺" + Number(n).toLocaleString('tr-TR'); }
+function fmtKg(n){ if(n==null) return "—"; return Number(n).toLocaleString('tr-TR') + " kg"; }
+function fmtDate(d){ if(!d) return "—"; const p=d.split("-"); return p[2]+"."+p[1]+"."+p[0]; }
+
+async function loadData(){
+  try{
+    let all = []; let offset = null;
+    do{
+      const url = `${PROXY_URL}${offset ? "?offset="+offset : ""}`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("Bağlantı hatası ("+res.status+")");
+      const data = await res.json();
+      all = all.concat(data.records);
+      offset = data.offset;
+    }while(offset);
+    records = all.map(r=>({ id:r.id, ...r.fields }));
+    render();
+  }catch(e){
+    app.innerHTML = `<div class="errbox">Veri yüklenemedi.<br>${e.message}<br><br>İnternet bağlantını kontrol et.</div>`;
+  }
+}
+
+function applyFilterSet(list){
+  return list.filter(r=>{
+    if(filters.atolye.size && !filters.atolye.has(String(r["Atölye"]))) return false;
+    if(filters.durum.size && !filters.durum.has(r["Ürün Durumu"])) return false;
+    if(filters.search){
+      const q = filters.search.toLowerCase();
+      const hay = [r["Proje Adı"], r["Sorumlu Mimar"], r["Müşteri"]].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function go(r){ route = r; render(); window.scrollTo(0,0); }
+
+function render(){
+  backBtn.classList.toggle("show", route.page!=="home");
+  if(route.page==="home"){ pageTitle.textContent="Ürün Takip"; renderHome(); }
+  else if(route.page==="atolye"){ pageTitle.textContent="Atölye "+route.no; renderAtolye(route.no, false); }
+  else if(route.page==="durum"){ pageTitle.textContent="İş Durumu"; renderAtolye(null, true); }
+  else if(route.page==="detay"){ pageTitle.textContent="İş Detayı"; renderDetay(route.id); }
+  else if(route.page==="rapor"){ pageTitle.textContent="Rapor"; renderRapor(); }
+}
+
+function renderHome(){
+  const list = applyFilterSet(records);
+  let html = `<div class="eyebrow">Atölyeler</div><div class="grid2">`;
+  for(let i=1;i<=4;i++){
+    const items = list.filter(r=>String(r["Atölye"])===String(i));
+    const counts = STATUS_ORDER.map(st=> items.filter(r=>r["Ürün Durumu"]===st).length);
+    const tot = Math.max(1, items.length);
+    const bekleyen = counts[0]+counts[1];
+    const surenen = counts[2];
+    const biten = counts[3]+counts[4];
+    html += `<div class="atolye-card tap" onclick='go({page:"atolye",no:${i}})'>
+      <div class="no">${i}</div>
+      <div class="lbl">Atölye ${i}</div>
+      <div class="counts">
+        <span class="chip">${bekleyen} bekleyen</span>
+        <span class="chip warn">${surenen} üretimde</span>
+        <span class="chip ok">${biten} biten</span>
+      </div>
+      <div class="segbar">
+        ${STATUS_ORDER.map((st,idx)=>`<span style="width:${counts[idx]/tot*100}%;background:${STATUS_COLOR[st]}"></span>`).join("")}
+      </div>
+    </div>`;
+  }
+  html += `</div><div class="cutline"></div>`;
+  html += `<div class="wide-btn tap" onclick='go({page:"durum"})'><span class="t">İş Durumu</span><span class="arrow">→</span></div>`;
+  html += `<div class="wide-btn tap" onclick='go({page:"rapor"})'><span class="t">Rapor</span><span class="arrow">→</span></div>`;
+  app.innerHTML = html;
+}
+
+function jobCard(r){
+  const photo = (r["Ürün Fotoğrafı"]||[])[0];
+  const img = photo ? `<img src="${(photo.thumbnails&&photo.thumbnails.large)?photo.thumbnails.large.url:photo.url}">` : `<div class="ph">✂</div>`;
+  const statusColor = STATUS_COLOR[r["Ürün Durumu"]] || "var(--line)";
+  return `<div class="job-card tap" style="--card-status:${statusColor}" onclick='go({page:"detay",id:"${r.id}"})'>
+    ${img}
+    <div class="info">
+      <div class="name">${r["Proje Adı"]||"İsimsiz Proje"}</div>
+      <div class="meta">${r["Müşteri"]||"Müşteri yok"} · ${r["Sorumlu Mimar"]||"Mimar yok"}</div>
+      <div class="atolye-tag">ATÖLYE ${r["Atölye"]||"—"}</div>
+    </div>
+  </div>`;
+}
+
+function renderAtolye(no, showTag){
+  const base = no ? records.filter(r=>String(r["Atölye"])===String(no)) : records;
+  const list = applyFilterSet(base);
+  let html = "";
+  STATUS_ORDER.forEach(st=>{
+    const items = list.filter(r=>r["Ürün Durumu"]===st);
+    html += `<div class="group-title"><span class="bar" style="background:${STATUS_COLOR[st]}"></span><h2>${STATUS_LABEL[st]}</h2><span class="cnt">${items.length}</span></div>`;
+    if(items.length===0){ html += `<div class="empty">Bu grupta iş yok.</div>`; }
+    else { items.forEach(r=> html += jobCard(r)); }
+  });
+  app.innerHTML = html || `<div class="empty">Kayıt bulunamadı.</div>`;
+}
+
+function renderDetay(id){
+  const r = records.find(x=>x.id===id);
+  if(!r){ app.innerHTML = `<div class="empty">İş bulunamadı.</div>`; return; }
+  const photos = r["Ürün Fotoğrafı"]||[];
+  let photoHtml = photos.length
+    ? `<div class="photo-scroll">${photos.map(p=>`<img src="${p.url}">`).join("")}</div>`
+    : `<div class="photo-empty">Fotoğraf eklenmemiş</div>`;
+  app.innerHTML = `
+    ${photoHtml}
+    <h2 style="font-size:20px;margin-bottom:6px;">${r["Proje Adı"]||"İsimsiz Proje"}</h2>
+    <span class="status-pill" style="background:${STATUS_COLOR[r["Ürün Durumu"]]};color:var(--surface)">${r["Ürün Durumu"]||"Belirsiz"}</span>
+    <div class="spec-row"><span class="k">Atölye</span><span class="v">Atölye ${r["Atölye"]||"—"}</span></div>
+    <div class="spec-row"><span class="k">Müşteri</span><span class="v">${r["Müşteri"]||"—"}</span></div>
+    <div class="spec-row"><span class="k">Sorumlu Mimar</span><span class="v">${r["Sorumlu Mimar"]||"—"}</span></div>
+    <div class="spec-row"><span class="k">Malzeme Maliyeti</span><span class="v">${fmtTL(r["Malzeme Maliyeti"])}</span></div>
+    <div class="spec-row"><span class="k">Üretim Süresi</span><span class="v">${r["Üretim Süresi (saat)"]!=null? r["Üretim Süresi (saat)"]+" saat":"—"}</span></div>
+    <div class="spec-row"><span class="k">Başlangıç</span><span class="v">${fmtDate(r["Başlangıç Tarihi"])}</span></div>
+    <div class="spec-row"><span class="k">Bitiş</span><span class="v">${fmtDate(r["Bitiş Tarihi"])}</span></div>
+    ${r["Notlar"] ? `<div class="spec-row"><span class="k">Notlar</span><span class="v">${r["Notlar"]}</span></div>` : ""}
+    ${r["Görsel Çizim Linki"] ? `<a class="drive-btn" href="${r["Görsel Çizim Linki"]}" target="_blank">Teknik Çizimi Aç</a>` : ""}
+  `;
+}
+
+function renderRapor(){
+  const list = applyFilterSet(records);
+  const toplamProje = list.length;
+  const toplamMaliyet = list.reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0);
+  const ortSure = list.length ? (list.reduce((s,r)=>s+(r["Üretim Süresi (saat)"]||0),0)/list.length) : 0;
+  const maxMaliyet = Math.max(1, ...[1,2,3,4].map(i=> list.filter(r=>String(r["Atölye"])===String(i)).reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0)));
+
+  let html = `<div class="stat-grid">
+    <div class="stat-card"><div class="n">${toplamProje}</div><div class="l">Toplam Proje</div></div>
+    <div class="stat-card"><div class="n">${fmtTL(toplamMaliyet)}</div><div class="l">Toplam Malzeme Maliyeti</div></div>
+    <div class="stat-card"><div class="n">${ortSure.toFixed(1)} sa</div><div class="l">Ortalama Süre</div></div>
+    <div class="stat-card"><div class="n">${list.filter(r=>r["Ürün Durumu"]==="Teslim Edildi").length}</div><div class="l">Teslim Edilen</div></div>
+  </div>
+  <div class="cutline"></div>
+  <div class="eyebrow">Atölyeye Göre Malzeme Maliyeti</div>`;
+  for(let i=1;i<=4;i++){
+    const maliyet = list.filter(r=>String(r["Atölye"])===String(i)).reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0);
+    const pct = Math.round((maliyet/maxMaliyet)*100);
+    html += `<div class="bar-row"><div class="lbl">Atölye ${i}</div><div class="track"><div class="fill" style="width:${pct}%"></div></div><div class="val">${fmtTL(maliyet)}</div></div>`;
+  }
+  html += `<div class="cutline"></div><div class="eyebrow">Duruma Göre Dağılım</div>`;
+  STATUS_ORDER.forEach(st=>{
+    const n = list.filter(r=>r["Ürün Durumu"]===st).length;
+    const pct = Math.round((n/Math.max(1,toplamProje))*100);
+    html += `<div class="bar-row"><div class="lbl" style="width:110px">${st}</div><div class="track"><div class="fill" style="width:${pct}%;background:${STATUS_COLOR[st]}"></div></div><div class="val">${n}</div></div>`;
+  });
+  app.innerHTML = html;
+}
+
+/* Nav */
+backBtn.onclick = ()=> go({page:"home"});
+
+/* Theme */
+const themeBtn = document.getElementById("themeBtn");
+const themeMenu = document.getElementById("themeMenu");
+themeBtn.onclick = ()=> themeMenu.classList.toggle("show");
+document.querySelectorAll(".theme-opt").forEach(el=>{
+  el.onclick = ()=>{
+    document.body.setAttribute("data-theme", el.dataset.theme);
+    themeMenu.classList.remove("show");
+  };
+});
+document.addEventListener("click", e=>{
+  if(!themeBtn.contains(e.target) && !themeMenu.contains(e.target)) themeMenu.classList.remove("show");
+});
+
+/* Filters */
+const overlay = document.getElementById("overlay");
+const filterSheet = document.getElementById("filterSheet");
+const filterBtn = document.getElementById("filterBtn");
+const filterDot = document.getElementById("filterDot");
+
+function buildFilterOptions(){
+  const fA = document.getElementById("fAtolye");
+  fA.innerHTML = [1,2,3,4].map(i=>`<span class="pill-opt ${filters.atolye.has(String(i))?'active':''}" data-v="${i}">Atölye ${i}</span>`).join("");
+  const fD = document.getElementById("fDurum");
+  fD.innerHTML = STATUS_ORDER.map(s=>`<span class="pill-opt ${filters.durum.has(s)?'active':''}" data-v="${s}">${s}</span>`).join("");
+  fA.querySelectorAll(".pill-opt").forEach(p=> p.onclick=()=>{ 
+    const v=p.dataset.v; filters.atolye.has(v)?filters.atolye.delete(v):filters.atolye.add(v); p.classList.toggle("active");
+  });
+  fD.querySelectorAll(".pill-opt").forEach(p=> p.onclick=()=>{
+    const v=p.dataset.v; filters.durum.has(v)?filters.durum.delete(v):filters.durum.add(v); p.classList.toggle("active");
+  });
+  document.getElementById("fSearch").value = filters.search;
+}
+
+filterBtn.onclick = ()=>{ buildFilterOptions(); overlay.classList.add("show"); filterSheet.classList.add("show"); };
+overlay.onclick = ()=>{ overlay.classList.remove("show"); filterSheet.classList.remove("show"); };
+document.getElementById("applyFilters").onclick = ()=>{
+  filters.search = document.getElementById("fSearch").value;
+  overlay.classList.remove("show"); filterSheet.classList.remove("show");
+  filterDot.style.display = (filters.atolye.size||filters.durum.size||filters.search) ? "block":"none";
+  render();
+};
+document.getElementById("clearFilters").onclick = ()=>{
+  filters = { atolye:new Set(), durum:new Set(), search:"" };
+  overlay.classList.remove("show"); filterSheet.classList.remove("show");
+  filterDot.style.display = "none";
+  render();
+};
+
+loadData();
+</script>
+</body>
+</html>
