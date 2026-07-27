@@ -823,8 +823,8 @@ function renderDetay(id){
     <div class="spec-row"><span class="k">Müşteri</span><span class="v">${musteriAdi(r)||"—"}</span></div>
     <div class="spec-row"><span class="k">Sorumlu Mimar</span><span class="v">${mimarAdi(r)||"—"}</span></div>
     <div class="spec-row"><span class="k">Malzeme Maliyeti</span><span class="v">${fmtTL(r["Malzeme Maliyeti"])}</span></div>
-    <div class="spec-row"><span class="k">Hesaplanan Süre</span><span class="v">${r["Hesaplanan Süre (iş günü)"]!=null? r["Hesaplanan Süre (iş günü)"]+" iş günü":"—"}</span></div>
-    <div class="spec-row"><span class="k">Atölyede Bekleyen Gün</span><span class="v">${r["Atölyede Bekleyen Gün"]!=null? r["Atölyede Bekleyen Gün"]+" gün"+(r["Ürün Durumu"]!=="Teslim Edildi"? " (devam ediyor)":"") :"—"}</span></div>
+    <div class="spec-row"><span class="k">Hesaplanan Süre</span><span class="v">${typeof r["Hesaplanan Süre (iş günü)"]==="number"? r["Hesaplanan Süre (iş günü)"]+" iş günü":"—"}</span></div>
+    <div class="spec-row"><span class="k">Atölyede Bekleyen Gün</span><span class="v">${typeof r["Atölyede Bekleyen Gün"]==="number"? r["Atölyede Bekleyen Gün"]+" gün"+(r["Ürün Durumu"]!=="Teslim Edildi"? " (devam ediyor)":"") :"—"}</span></div>
     <div class="spec-row"><span class="k">Başlangıç</span><span class="v">${fmtDate(r["Başlangıç Tarihi"])}</span></div>
     <div class="spec-row"><span class="k">Bitiş</span><span class="v">${fmtDate(r["Bitiş Tarihi"])}</span></div>
     ${duraklamaGun!=null ? `<div class="spec-row"><span class="k">Duraklama Süresi</span><span class="v">${duraklamaGun} gün${r["Duraklama Sebebi"]? " — "+r["Duraklama Sebebi"] : ""}</span></div>` : ""}
@@ -942,7 +942,8 @@ function renderRapor(){
   const teknik = document.body.getAttribute("data-layout") === "teknik";
   const toplamProje = list.length;
   const toplamMaliyet = list.reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0);
-  const ortSure = list.length ? (list.reduce((s,r)=>s+(r["Hesaplanan Süre (iş günü)"]||0),0)/list.length) : 0;
+  const sureList = list.map(r=>r["Hesaplanan Süre (iş günü)"]).filter(v=>typeof v==="number" && !isNaN(v));
+  const ortSure = sureList.length ? (sureList.reduce((s,v)=>s+v,0)/sureList.length) : 0;
   const maxMaliyet = Math.max(1, ...[1,2,3,4].map(i=> list.filter(r=>String(r["Atölye"])===String(i)).reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0)));
 
   let html;
