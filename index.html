@@ -514,7 +514,7 @@
 
 </style>
 </head>
-<body data-theme="light">
+<body data-theme="bronz">
 
 <div class="tek-frame" aria-hidden="true">
   <span class="tf tf-tl"></span><span class="tf tf-tr"></span><span class="tf tf-bl"></span><span class="tf tf-br"></span>
@@ -942,7 +942,7 @@ function renderRapor(){
   const teknik = document.body.getAttribute("data-layout") === "teknik";
   const toplamProje = list.length;
   const toplamMaliyet = list.reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0);
-  const ortSure = list.length ? (list.reduce((s,r)=>s+(r["Üretim Süresi (gün)"]||0),0)/list.length) : 0;
+  const ortSure = list.length ? (list.reduce((s,r)=>s+(r["Hesaplanan Süre (iş günü)"]||0),0)/list.length) : 0;
   const maxMaliyet = Math.max(1, ...[1,2,3,4].map(i=> list.filter(r=>String(r["Atölye"])===String(i)).reduce((s,r)=>s+(r["Malzeme Maliyeti"]||0),0)));
 
   let html;
@@ -970,7 +970,7 @@ function renderRapor(){
     html = `<div class="stat-grid">
       <div class="stat-card"><div class="n">${toplamProje}</div><div class="l">Toplam Proje</div></div>
       <div class="stat-card"><div class="n">${fmtTL(toplamMaliyet)}</div><div class="l">Toplam Malzeme Maliyeti</div></div>
-      <div class="stat-card"><div class="n">${ortSure.toFixed(1)} gün</div><div class="l">Ortalama Süre</div></div>
+      <div class="stat-card"><div class="n">${ortSure.toFixed(1)} iş günü</div><div class="l">Ortalama Süre</div></div>
       <div class="stat-card"><div class="n">${list.filter(r=>r["Ürün Durumu"]==="Teslim Edildi").length}</div><div class="l">Teslim Edilen</div></div>
     </div>
     <div class="cutline"></div>
@@ -998,7 +998,7 @@ pageTitle.onclick = ()=> { if(route.page!=="home") go({page:"home"}); };
 const themeBtn = document.getElementById("themeBtn");
 const themeMenu = document.getElementById("themeMenu");
 const savedTheme = localStorage.getItem("atolyeTheme");
-if(savedTheme) document.body.setAttribute("data-theme", savedTheme);
+document.body.setAttribute("data-theme", savedTheme || "bronz");
 themeBtn.onclick = ()=> themeMenu.classList.toggle("show");
 document.querySelectorAll(".theme-opt").forEach(el=>{
   el.onclick = ()=>{
@@ -1014,7 +1014,7 @@ document.addEventListener("click", e=>{
 /* Tasarım (layout, kalıcı: localStorage) */
 const layoutBtn = document.getElementById("layoutBtn");
 const layoutSheet = document.getElementById("layoutSheet");
-let currentLayout = localStorage.getItem("atolyeLayout") || "klasik";
+let currentLayout = localStorage.getItem("atolyeLayout") || "galeri";
 if(currentLayout === "teknik") currentLayout = "klasik";
 document.body.setAttribute("data-layout", currentLayout);
 
